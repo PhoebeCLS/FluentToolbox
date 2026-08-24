@@ -5,11 +5,12 @@
 **专为 Windows 11 设计的轻量、原生桌面小工具集**
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![.NET](https://img.shields.io/badge/.NET-10.0-purple.svg)](https://dotnet.microsoft.com/)
+[![.NET](https://img.shields.io/badge/.NET-9.0%2F10.0-purple.svg)](https://dotnet.microsoft.com/)
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010%2F11-0078D4.svg)](https://www.microsoft.com/windows)
 [![Style](https://img.shields.io/badge/Design-Microsoft%20Store%20Fluent-success.svg)](https://learn.microsoft.com/windows/apps/design/)
+[![Portability](https://img.shields.io/badge/Portability-100%25%20Green%20Portable-brightgreen.svg)](https://github.com/PhoebeCLS/FluentToolbox/releases)
 
-零冗余依赖 · 原生 DWM 深浅色适配 · 60~240Hz 高刷物理阻尼平滑滚动 · 亚克力通透质感
+零冗余依赖 · 原生 DWM 深浅色适配 · 60~240Hz 高刷物理阻尼平滑滚动 · 纯净免安装零残留
 
 </div>
 
@@ -41,11 +42,21 @@
 - **多种剪裁模式**：支持 22% Squircle 圆角矩形、无切角圆形、方形智能去黑边以及原样直转。
 - **格式双模导出**：支持标准 32×32 PNG、多尺寸复合 Windows ICO（16~256px）或双格式同步输出。
 - **智能域名与路径清洗**：自动剔除 URL 前缀（`www.`、`https:` 等），生成规整文件名。
-- **海量队列流畅渲染**：百行虚拟化渲染与 UI 调度节流，处理数千张图片依然丝滑不卡顿。
+- **海量队列流畅渲染**：百行虚拟化渲染与 UI 调度节条，处理数千张图片依然丝滑不卡顿。
 
 <div align="center">
   <img src="assets/iconcraft_preview.jpg" alt="IconCraft 界面截图" width="760"/>
 </div>
+
+---
+
+## 🌿 纯净绿色与便携特性
+
+本项目全系工具均严格遵循**零污染、零残留**的纯绿色便携规范：
+
+- **不写入注册表**：程序不向 Windows 注册表写入任何安装信息、开机项或文件关联规则（仅只读探测系统深浅色主题偏好）。
+- **无额外文件系统残留**：除用户解压得到的程序本体及主动导出的结果文件外，不会在系统 `AppData`、`ProgramData`、`Temp` 或用户主目录下产生任何缓存文件或隐藏数据目录。
+- **即开即用 · 随删随净**：无需安装包或引导安装程序，解压即可运行；需要卸载时直接删除解压文件夹即可实现 100% 彻底移除。
 
 ---
 
@@ -60,7 +71,7 @@
 
 ## 🚀 编译与运行
 
-本项目基于 **.NET 10 (WPF)** 开发，依赖 Windows 10/11 原生 DirectComposition 与 WinRT PDF 渲染管线，无需安装额外运行时。
+本项目基于 **.NET (WPF)** 开发，依赖 Windows 10/11 原生 DirectComposition 与 WinRT PDF 渲染管线，无需安装额外运行时。
 
 ### 源码编译
 
@@ -79,4 +90,3 @@ dotnet publish src/IconCraft/IconCraft.csproj -c Release -r win-x64 --self-conta
 ## 📄 开源协议
 
 本项目采用 [Apache License 2.0](LICENSE) 开源许可证。
-
