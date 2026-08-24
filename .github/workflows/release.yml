@@ -1,4 +1,4 @@
-name: Build & Release
+﻿name: Build & Release
 
 on:
   push:
@@ -9,7 +9,7 @@ on:
       version:
         description: 'Release Version (e.g. v1.0.1)'
         required: false
-        default: 'v1.0.0'
+        default: 'v1.0.1'
 
 permissions:
   contents: write
@@ -17,6 +17,7 @@ permissions:
   attestations: write
 
 env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
   ACTIONS_FORCE_NODE24: 'true'
 
 jobs:
@@ -42,7 +43,7 @@ jobs:
           if (-not $rawTag -or $rawTag -eq "main") {
             $rawTag = "${{ github.event.inputs.version }}"
             if (-not $rawTag) {
-              $rawTag = "v1.0.0"
+              $rawTag = "v1.0.1"
             }
           }
           $cleanVer = $rawTag.TrimStart('v')
@@ -82,11 +83,12 @@ jobs:
         run: |
           ./scripts/capture_screenshots.ps1
 
-      - name: Commit and Push Updated Screenshots (if changed)
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "chore(assets): auto-update UI preview screenshots for ${{ env.RELEASE_TAG }} [skip ci]"
-          file_pattern: "assets/*.jpg"
+      - name: Commit and Push Updated Screenshots (GitHub Verified Commit)
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ./scripts/verified_commit.ps1 -Repo "${{ github.repository }}" -Branch "main" -Message "chore(assets): auto-update UI preview screenshots for ${{ env.RELEASE_TAG }} [skip ci]"
 
       - name: Package Full FluentToolbox
         shell: pwsh
@@ -106,17 +108,14 @@ jobs:
           subject-path: |
             publish/*.zip
 
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          name: "FluentToolbox ${{ env.RELEASE_TAG }}"
-          tag_name: ${{ env.RELEASE_TAG }}
-          draft: false
-          prerelease: false
-          generate_release_notes: false
-          files: |
-            publish/FluentToolbox-${{ env.RELEASE_TAG }}-win-x64.zip
-            publish/PDFDual-${{ env.RELEASE_TAG }}-win-x64.zip
-            publish/IconCraft-${{ env.RELEASE_TAG }}-win-x64.zip
+      - name: Create GitHub Release (Native CLI)
+        shell: pwsh
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ env.RELEASE_TAG }}" `
+            --title "FluentToolbox ${{ env.RELEASE_TAG }}" `
+            publish/FluentToolbox-${{ env.RELEASE_TAG }}-win-x64.zip `
+            publish/PDFDual-${{ env.RELEASE_TAG }}-win-x64.zip `
+            publish/IconCraft-${{ env.RELEASE_TAG }}-win-x64.zip `
+            --clobber
