@@ -1,0 +1,21 @@
+﻿## Build & Intermediate directories
+**/[Bb]in/
+**/[Oo]bj/
+**/[Pp]ublish/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## IDE & Editors
+.vs/
+.idea/
+*.swp
+*~
+.DS_Store
+
+## Outputs
+*.exe
+*.dll
+*.pdb
+!assets/
