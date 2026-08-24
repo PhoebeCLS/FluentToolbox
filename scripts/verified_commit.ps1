@@ -1,66 +1,89 @@
-﻿param(
-    [string]$Repo = $env:GITHUB_REPOSITORY,
+param(
+    [string]$Repo = "PhoebeCLS/FluentToolbox",
     [string]$Branch = "main",
     [string]$Message = "chore(assets): auto-update UI preview screenshots [skip ci]",
     [string[]]$Files = @("assets/pdfdual_preview.jpg", "assets/iconcraft_preview.jpg")
 )
 
-if (-not $Repo) {
-    $Repo = "PhoebeCLS/FluentToolbox"
-}
+# 1. Get Head Commit SHA and Tree SHA
+$headRef = gh api "repos/$Repo/git/ref/heads/$Branch" | ConvertFrom-Json
+$headCommitSha = $headRef.object.sha
+$headCommit = gh api "repos/$Repo/git/commits/$headCommitSha" | ConvertFrom-Json
+$baseTreeSha = $headCommit.tree.sha
 
-# 1. Get current branch Head OID
-$headOid = gh api "repos/$Repo/git/ref/heads/$Branch" --jq .object.sha
-if (-not $headOid) {
-    Write-Host "Warning: Could not get head OID for $Branch. Skipping verified commit."
-    exit 0
-}
+Write-Host "Head Commit: $headCommitSha, Base Tree: $baseTreeSha"
 
-# 2. Build additions array
-$additions = @()
+# 2. Upload Blobs
+$treeEntries = @()
 foreach ($file in $Files) {
     if (Test-Path $file) {
+        $cleanPath = $file.Replace('\', '/').TrimStart('./')
         $bytes = [System.IO.File]::ReadAllBytes((Resolve-Path $file))
         $b64 = [Convert]::ToBase64String($bytes)
-        $cleanPath = $file.Replace('\', '/').TrimStart('./')
-        $additions += @{
+        
+        $blobPayload = @{
+            content = $b64
+            encoding = "base64"
+        } | ConvertTo-Json
+        
+        $tmpBlob = [System.IO.Path]::GetTempFileName()
+        [System.IO.File]::WriteAllText($tmpBlob, $blobPayload, [System.Text.Encoding]::UTF8)
+        $blobRes = gh api "repos/$Repo/git/blobs" --input $tmpBlob | ConvertFrom-Json
+        Remove-Item $tmpBlob -Force
+        
+        Write-Host "Uploaded blob for ${cleanPath}: $($blobRes.sha)"
+        
+        $treeEntries += @{
             path = $cleanPath
-            contents = $b64
+            mode = "100644"
+            type = "blob"
+            sha = $blobRes.sha
         }
     }
 }
 
-if ($additions.Count -eq 0) {
-    Write-Host "No files to commit."
+if ($treeEntries.Count -eq 0) {
+    Write-Host "No files found to commit."
     exit 0
 }
 
-# 3. Create JSON payload for GraphQL createCommitOnBranch mutation
-$payloadObj = @{
-    query = 'mutation($input: CreateCommitOnBranchInput!) { createCommitOnBranch(input: $input) { commit { oid url } } }'
-    variables = @{
-        input = @{
-            branch = @{
-                repositoryNameWithOwner = $Repo
-                branchName = $Branch
-            }
-            message = @{
-                headline = $Message
-            }
-            fileChanges = @{
-                additions = $additions
-            }
-            expectedHeadOid = $headOid
-        }
-    }
-}
+# 3. Create Tree
+$treePayload = @{
+    base_tree = $baseTreeSha
+    tree = $treeEntries
+} | ConvertTo-Json -Depth 5
 
-$jsonPayload = $payloadObj | ConvertTo-Json -Depth 10
-$tmpJson = [System.IO.Path]::GetTempFileName()
-[System.IO.File]::WriteAllText($tmpJson, $jsonPayload, [System.Text.Encoding]::UTF8)
+$tmpTree = [System.IO.Path]::GetTempFileName()
+[System.IO.File]::WriteAllText($tmpTree, $treePayload, [System.Text.Encoding]::UTF8)
+$treeRes = gh api "repos/$Repo/git/trees" --input $tmpTree | ConvertFrom-Json
+Remove-Item $tmpTree -Force
+Write-Host "Created Tree: $($treeRes.sha)"
 
-$commitResult = gh api graphql --input $tmpJson
-Remove-Item $tmpJson -Force
+# 4. Create Commit
+$commitPayload = @{
+    message = $Message
+    tree = $treeRes.sha
+    parents = @($headCommitSha)
+} | ConvertTo-Json
 
-Write-Host "Verified commit created successfully on GitHub:"
-Write-Host $commitResult
+$tmpCommit = [System.IO.Path]::GetTempFileName()
+[System.IO.File]::WriteAllText($tmpCommit, $commitPayload, [System.Text.Encoding]::UTF8)
+$commitRes = gh api "repos/$Repo/git/commits" --input $tmpCommit | ConvertFrom-Json
+Remove-Item $tmpCommit -Force
+Write-Host "Created Verified Commit: $($commitRes.sha)"
+
+# 5. Update Branch Ref
+$refPayload = @{
+    sha = $commitRes.sha
+    force = $false
+} | ConvertTo-Json
+
+$tmpRef = [System.IO.Path]::GetTempFileName()
+[System.IO.File]::WriteAllText($tmpRef, $refPayload, [System.Text.Encoding]::UTF8)
+$updateRefRes = gh api -X PATCH "repos/$Repo/git/refs/heads/$Branch" --input $tmpRef | ConvertFrom-Json
+Remove-Item $tmpRef -Force
+Write-Host "Updated $Branch ref to $($commitRes.sha) successfully!"
+
+# 6. Check verification status of this commit
+$verification = gh api "repos/$Repo/commits/$($commitRes.sha)" | ConvertFrom-Json
+Write-Host "Verification Status: $($verification.commit.verification.verified), Reason: $($verification.commit.verification.reason)"
