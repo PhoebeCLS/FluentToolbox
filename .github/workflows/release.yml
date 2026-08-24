@@ -77,6 +77,17 @@ jobs:
 
           Compress-Archive -Path publish/IconCraft/* -DestinationPath "publish/IconCraft-${{ env.RELEASE_TAG }}-win-x64.zip" -Force
 
+      - name: Generate Automated UI Screenshots
+        shell: pwsh
+        run: |
+          ./scripts/capture_screenshots.ps1
+
+      - name: Commit and Push Updated Screenshots (if changed)
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(assets): auto-update UI preview screenshots for ${{ env.RELEASE_TAG }} [skip ci]"
+          file_pattern: "assets/*.jpg"
+
       - name: Package Full FluentToolbox
         shell: pwsh
         run: |

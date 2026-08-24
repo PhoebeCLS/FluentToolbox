@@ -8,6 +8,7 @@
     <ApplicationIcon>pdfdual.ico</ApplicationIcon>
     <AssemblyName>PDFDual</AssemblyName>
     <RootNamespace>PDFDual</RootNamespace>
+    <RollForward>LatestMajor</RollForward>
     <PublishReadyToRun>true</PublishReadyToRun>
   </PropertyGroup>
 

@@ -1,4 +1,6 @@
-﻿using System;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -43,6 +45,42 @@ namespace IconCraft
             _taskbar = new TaskbarHelper(this);
             SmoothScrollHelper.Register(MainScrollViewer);
             ThemeManager.SetTheme(this, "system");
+
+            var args = Environment.GetCommandLineArgs();
+            int idx = Array.IndexOf(args, "--screenshot");
+            if (idx >= 0)
+            {
+                string outPath = (idx + 1 < args.Length) ? args[idx + 1] : "iconcraft_preview.jpg";
+                SaveWindowScreenshot(outPath);
+                Application.Current.Shutdown();
+                return;
+            }
+        }
+
+                private void SaveWindowScreenshot(string path)
+        {
+            try
+            {
+                this.Width = 880;
+                this.Height = 760;
+                this.Measure(new Size(880, 760));
+                this.Arrange(new Rect(0, 0, 880, 760));
+                this.UpdateLayout();
+
+                var rtb = new RenderTargetBitmap(880, 760, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+                rtb.Render(this);
+
+                var encoder = new JpegBitmapEncoder { QualityLevel = 95 };
+                encoder.Frames.Add(BitmapFrame.Create(rtb));
+                string? dir = Path.GetDirectoryName(path);
+                if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+                using var fs = File.Create(path);
+                encoder.Save(fs);
+            }
+            catch (Exception ex)
+            {
+                File.WriteAllText(path + ".err", ex.ToString());
+            }
         }
 
         private void Theme_Checked(object sender, RoutedEventArgs e)
@@ -314,4 +352,7 @@ namespace IconCraft
         }
     }
 }
+
+
+
 

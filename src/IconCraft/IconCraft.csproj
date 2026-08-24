@@ -9,6 +9,7 @@
     <AssemblyName>IconCraft</AssemblyName>
     <RootNamespace>IconCraft</RootNamespace>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <RollForward>LatestMajor</RollForward>
     <PublishReadyToRun>true</PublishReadyToRun>
   </PropertyGroup>
 
