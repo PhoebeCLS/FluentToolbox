@@ -1,0 +1,94 @@
+﻿name: Build & Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Extract Version
+        id: get_version
+        shell: pwsh
+        run: |
+          $tag = $env:GITHUB_REF_NAME
+          if (-not $tag -or $tag -eq "main") {
+            $tag = "v1.0.0"
+          }
+          Write-Output "VERSION=$tag" >> $env:GITHUB_ENV
+
+      - name: Build and Publish PDFDual
+        shell: pwsh
+        run: |
+          dotnet publish src/PDFDual/PDFDual.csproj `
+            -c Release `
+            -r win-x64 `
+            --self-contained false `
+            -p:PublishReadyToRun=true `
+            -o publish/PDFDual
+
+          Compress-Archive -Path publish/PDFDual/* -DestinationPath "publish/PDFDual-${{ env.VERSION }}-win-x64.zip" -Force
+
+      - name: Build and Publish IconCraft
+        shell: pwsh
+        run: |
+          dotnet publish src/IconCraft/IconCraft.csproj `
+            -c Release `
+            -r win-x64 `
+            --self-contained false `
+            -p:PublishReadyToRun=true `
+            -o publish/IconCraft
+
+          Compress-Archive -Path publish/IconCraft/* -DestinationPath "publish/IconCraft-${{ env.VERSION }}-win-x64.zip" -Force
+
+      - name: Package Full FluentToolbox
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path "publish/FluentToolbox/PDFDual" -Force
+          New-Item -ItemType Directory -Path "publish/FluentToolbox/IconCraft" -Force
+          Copy-Item publish/PDFDual/* "publish/FluentToolbox/PDFDual" -Recurse -Force
+          Copy-Item publish/IconCraft/* "publish/FluentToolbox/IconCraft" -Recurse -Force
+          Copy-Item README.md "publish/FluentToolbox/" -Force
+          Copy-Item LICENSE "publish/FluentToolbox/" -Force
+          Compress-Archive -Path publish/FluentToolbox/* -DestinationPath "publish/FluentToolbox-${{ env.VERSION }}-win-x64.zip" -Force
+
+      - name: Generate Build Provenance Attestation (GitHub Verified Badge)
+        uses: actions/attest-build-provenance@v2
+        continue-on-error: true
+        with:
+          subject-path: |
+            publish/*.zip
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "FluentToolbox ${{ env.VERSION }}"
+          tag_name: ${{ env.VERSION }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          files: |
+            publish/FluentToolbox-${{ env.VERSION }}-win-x64.zip
+            publish/PDFDual-${{ env.VERSION }}-win-x64.zip
+            publish/IconCraft-${{ env.VERSION }}-win-x64.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
