@@ -13,8 +13,6 @@ on:
 
 permissions:
   contents: write
-  id-token: write
-  attestations: write
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
@@ -107,13 +105,6 @@ jobs:
           Copy-Item README.md "publish/FluentToolbox/" -Force
           Copy-Item LICENSE "publish/FluentToolbox/" -Force
           Compress-Archive -Path publish/FluentToolbox/* -DestinationPath "publish/FluentToolbox-${{ env.RELEASE_TAG }}-win-x64.zip" -Force
-
-      - name: Generate Build Provenance Attestation (GitHub Verified Badge)
-        uses: actions/attest-build-provenance@v2
-        continue-on-error: true
-        with:
-          subject-path: |
-            publish/*.zip
 
       - name: Create or Update GitHub Release
         shell: pwsh
