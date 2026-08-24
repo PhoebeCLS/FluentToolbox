@@ -28,7 +28,7 @@
 - **独立动作按钮**：生成完毕后提供「打开 PDF 文件」与「打开所在文件夹」快捷操作。
 
 <div align="center">
-  <img src="assets/pdf.jpg" alt="PDFDual 界面截图" width="760"/>
+  <img src="assets/pdfdual_preview.jpg" alt="PDFDual 界面截图" width="760"/>
 </div>
 
 ---
@@ -44,7 +44,7 @@
 - **海量队列流畅渲染**：百行虚拟化渲染与 UI 调度节流，处理数千张图片依然丝滑不卡顿。
 
 <div align="center">
-  <img src="assets/ico.jpg" alt="IconCraft 界面截图" width="760"/>
+  <img src="assets/iconcraft_preview.jpg" alt="IconCraft 界面截图" width="760"/>
 </div>
 
 ---
@@ -79,3 +79,4 @@ dotnet publish src/IconCraft/IconCraft.csproj -c Release -r win-x64 --self-conta
 ## 📄 开源协议
 
 本项目采用 [Apache License 2.0](LICENSE) 开源许可证。
+
