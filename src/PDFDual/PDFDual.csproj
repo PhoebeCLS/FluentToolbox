@@ -2,10 +2,12 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <TargetFramework>net9.0-windows10.0.19041.0</TargetFramework>
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
     <ApplicationIcon>pdfdual.ico</ApplicationIcon>
+    <AssemblyName>PDFDual</AssemblyName>
+    <RootNamespace>PDFDual</RootNamespace>
     <PublishReadyToRun>true</PublishReadyToRun>
   </PropertyGroup>
 
@@ -19,4 +21,3 @@
   </ItemGroup>
 
 </Project>
-
