@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using Microsoft.Win32;
@@ -65,17 +66,46 @@ namespace PDFDual
         {
             try
             {
-                this.Width = 880;
-                this.Height = 820;
-                this.Measure(new Size(880, 820));
-                this.Arrange(new Rect(0, 0, 880, 820));
+                int singleW = 880;
+                int singleH = 680;
+
+                // 1. Render Dark Mode
+                ThemeManager.SetTheme(this, "dark");
+                this.Width = singleW;
+                this.Measure(new Size(singleW, double.PositiveInfinity));
+                singleH = (int)Math.Max(this.DesiredSize.Height, 660);
+                this.Height = singleH;
+                this.Arrange(new Rect(0, 0, singleW, singleH));
                 this.UpdateLayout();
 
-                var rtb = new RenderTargetBitmap(880, 820, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
-                rtb.Render(this);
+                var rtbDark = new RenderTargetBitmap(singleW, singleH, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+                rtbDark.Render(this);
+
+                // 2. Render Light Mode
+                ThemeManager.SetTheme(this, "light");
+                this.UpdateLayout();
+
+                var rtbLight = new RenderTargetBitmap(singleW, singleH, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+                rtbLight.Render(this);
+
+                // 3. Composite Side-by-Side (Scheme A)
+                int spacing = 24;
+                int totalW = singleW * 2 + spacing;
+                int totalH = singleH;
+
+                var dv = new DrawingVisual();
+                using (var dc = dv.RenderOpen())
+                {
+                    dc.DrawRectangle(new SolidColorBrush(Color.FromRgb(0x18, 0x18, 0x18)), null, new Rect(0, 0, totalW, totalH));
+                    dc.DrawImage(rtbDark, new Rect(0, 0, singleW, singleH));
+                    dc.DrawImage(rtbLight, new Rect(singleW + spacing, 0, singleW, singleH));
+                }
+
+                var rtbComposite = new RenderTargetBitmap(totalW, totalH, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+                rtbComposite.Render(dv);
 
                 var encoder = new JpegBitmapEncoder { QualityLevel = 95 };
-                encoder.Frames.Add(BitmapFrame.Create(rtb));
+                encoder.Frames.Add(BitmapFrame.Create(rtbComposite));
                 string? dir = Path.GetDirectoryName(path);
                 if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
                 using var fs = File.Create(path);
