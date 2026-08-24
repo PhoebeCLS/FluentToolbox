@@ -5,11 +5,19 @@ on:
     tags:
       - 'v*'
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release Version (e.g. v1.0.1)'
+        required: false
+        default: 'v1.0.0'
 
 permissions:
   contents: write
   id-token: write
   attestations: write
+
+env:
+  ACTIONS_FORCE_NODE24: 'true'
 
 jobs:
   build-and-release:
@@ -32,11 +40,16 @@ jobs:
         run: |
           $rawTag = $env:GITHUB_REF_NAME
           if (-not $rawTag -or $rawTag -eq "main") {
-            $rawTag = "v1.0.0"
+            $rawTag = "${{ github.event.inputs.version }}"
+            if (-not $rawTag) {
+              $rawTag = "v1.0.0"
+            }
           }
           $cleanVer = $rawTag.TrimStart('v')
           Write-Output "RELEASE_TAG=$rawTag" >> $env:GITHUB_ENV
           Write-Output "APP_VERSION=$cleanVer" >> $env:GITHUB_ENV
+          Write-Host "Resolved Release Tag: $rawTag"
+          Write-Host "Resolved App Version: $cleanVer"
 
       - name: Build and Publish PDFDual
         shell: pwsh
