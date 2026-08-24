@@ -66,12 +66,12 @@ namespace PDFDual
             try
             {
                 this.Width = 880;
-                this.Height = 760;
-                this.Measure(new Size(880, 760));
-                this.Arrange(new Rect(0, 0, 880, 760));
+                this.Height = 820;
+                this.Measure(new Size(880, 820));
+                this.Arrange(new Rect(0, 0, 880, 820));
                 this.UpdateLayout();
 
-                var rtb = new RenderTargetBitmap(880, 760, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+                var rtb = new RenderTargetBitmap(880, 820, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
                 rtb.Render(this);
 
                 var encoder = new JpegBitmapEncoder { QualityLevel = 95 };
